@@ -2,28 +2,36 @@ import argparse
 import asyncio
 import logging
 
+from drivers.aws import AWSRunner
 from drivers.docker import DockerRunner
 
 
 logger = logging.getLogger(__name__)
 
 
-async def main(args):
+def main(args: argparse.Namespace):
     docker_runner = DockerRunner(args.docker_image, args.bash_command)
     docker_runner.run()
     if not docker_runner.container:
         logger.error("Failed to run docker container.")
-
-    try:
-        for log_line in docker_runner:
-            logger.info(log_line)
-
-    except KeyboardInterrupt:
-        return
+    with AWSRunner(
+        aws_access_key_id=args.aws_access_key_id,
+        aws_secret_access_key=args.aws_secret_access_key,
+        aws_cloudwatch_stream=args.aws_cloudwatch_stream,
+        aws_cloudwatch_group=args.aws_cloudwatch_group,
+        aws_region=args.aws_region,
+    ) as aws_api:
+        try:
+            for message in docker_runner:
+                aws_api.send_message(message)
+        except KeyboardInterrupt:
+            return
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(prog="Test Task", description="Task that test me")
+    parser = argparse.ArgumentParser(
+        prog="Docker-AWS", description="Test Docker+AWS CloudWatch task."
+    )
 
     parser.add_argument("--docker-image", required=True, help="docker image name")
     parser.add_argument(
