@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import logging
 
 from drivers.aws import AWSRunner
@@ -11,7 +12,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def main(args: argparse.Namespace):
+async def main(args: argparse.Namespace):
     docker_runner = DockerRunner(args.docker_image, args.bash_command)
     docker_runner.run()
     if not docker_runner.container:
@@ -24,8 +25,7 @@ def main(args: argparse.Namespace):
         aws_region=args.aws_region,
     ) as aws_api:
         try:
-            output = docker_runner.container.attach(stdout=True, stream=True, logs=True)
-            for message in output:
+            for message in docker_runner:
                 msg = message.decode("utf-8")
                 aws_api.send_message(msg)
                 logger.info(f"Sent message: {msg}")
@@ -59,4 +59,4 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    main(args)
+    asyncio.run(main(args))

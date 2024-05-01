@@ -11,7 +11,11 @@ class DockerRunner:
     def run(self) -> None:
         self.container = self.client.containers.run(
             self.docker_image,
-            command=f'sh -c "{self.bash_command}"',
+            command=[
+                "/bin/sh",
+                "-c",
+                self.bash_command,
+            ],
             detach=True,
             auto_remove=False,
             stream=True,
