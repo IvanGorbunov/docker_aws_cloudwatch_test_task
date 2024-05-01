@@ -24,7 +24,8 @@ def main(args: argparse.Namespace):
         aws_region=args.aws_region,
     ) as aws_api:
         try:
-            for message in docker_runner:
+            output = docker_runner.container.attach(stdout=True, stream=True, logs=True)
+            for message in output:
                 msg = message.decode("utf-8")
                 aws_api.send_message(msg)
                 logger.info(f"Sent message: {msg}")
