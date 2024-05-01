@@ -4,6 +4,10 @@ import time
 import boto3
 from botocore.exceptions import ClientError
 
+logging.basicConfig(
+    level="INFO",
+    format="%(asctime)s [%(levelname)s]: %(message)s",
+)
 logger = logging.getLogger(__name__)
 
 
@@ -72,13 +76,19 @@ class AWSRunner:
             if self.aws_cloudwatch_stream == stream["logStreamName"]:
                 return True
 
-    def send_message(self, message: bytes) -> None:
-        self.client.put_log_events(
+    def send_message(self, message: bytes) -> bool | None:
+        response = self.client.put_log_events(
             logGroupName=self.aws_cloudwatch_group,
             logStreamName=self.aws_cloudwatch_stream,
-            logEvents=[
-                {"timestamp": int(round(time.time() * 1000)), "message": message.decode("utf-8")}
-            ],
+            logEvents=[{"timestamp": int(round(time.time() * 1000)), "message": message}],
+        )
+        if isinstance(response, dict):
+            metadata = response.get("ResponseMetadata")
+            if metadata and metadata.get("HTTPStatusCode") == 200:
+                return True
+        raise ClientError(
+            {"Error": {"Code": "Error", "Message": "Failed to send message to CloudWatch"}},
+            operation_name="put_log_events",
         )
 
     def clean_up(self) -> None:

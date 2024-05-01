@@ -1,11 +1,13 @@
 import argparse
-import asyncio
 import logging
 
 from drivers.aws import AWSRunner
 from drivers.docker import DockerRunner
 
-
+logging.basicConfig(
+    level="INFO",
+    format="%(asctime)s [%(levelname)s]: %(message)s",
+)
 logger = logging.getLogger(__name__)
 
 
@@ -23,9 +25,13 @@ def main(args: argparse.Namespace):
     ) as aws_api:
         try:
             for message in docker_runner:
-                aws_api.send_message(message)
+                msg = message.decode("utf-8")
+                aws_api.send_message(msg)
+                logger.info(f"Sent message: {msg}")
         except KeyboardInterrupt:
             return
+        except Exception as e:
+            logger.error(f"Failed to send message to AWS CloudWatch: {e}")
 
 
 def parse_args():
