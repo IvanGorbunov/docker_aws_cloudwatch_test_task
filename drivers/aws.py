@@ -64,9 +64,12 @@ class AWSRunner:
 
     @property
     def is_stream_exist(self) -> bool | None:
-        response = self.client.describe_log_streams(logStreamNamePrefix=self.aws_cloudwatch_stream)
+        response = self.client.describe_log_streams(
+            logGroupName=self.aws_cloudwatch_group,
+            logStreamNamePrefix=self.aws_cloudwatch_stream,
+        )
         for stream in response["logStreams"]:
-            if self.aws_cloudwatch_stream == stream["logGroupName"]:
+            if self.aws_cloudwatch_stream == stream["logStreamName"]:
                 return True
 
     def send_message(self, message: bytes) -> None:
