@@ -73,7 +73,9 @@ class AWSRunner:
         self.client.put_log_events(
             logGroupName=self.aws_cloudwatch_group,
             logStreamName=self.aws_cloudwatch_stream,
-            logEvents=[{"timestamp": int(round(time.time() * 1000)), "message": message}],
+            logEvents=[
+                {"timestamp": int(round(time.time() * 1000)), "message": message.decode("utf-8")}
+            ],
         )
 
     def clean_up(self) -> None:
