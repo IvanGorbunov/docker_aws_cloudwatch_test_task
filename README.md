@@ -41,3 +41,7 @@ python main.py --docker-image python \
                --aws-secret-access-key ... \
                --aws-region ...
 ```
+
+### Unsolved problems
+
+The interviewer said that my decision receives the log in parts and with a delay. The task requires a real-time solution. You need to look towards stdout in python.
