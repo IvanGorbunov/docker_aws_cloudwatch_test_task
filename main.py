@@ -1,6 +1,9 @@
 import argparse
 import asyncio
 import logging
+import select
+
+import click
 
 from drivers.aws import AWSRunner
 from drivers.docker import DockerRunner
@@ -25,13 +28,23 @@ def main(args: argparse.Namespace):
         aws_region=args.aws_region,
     ) as aws_api:
         try:
-            output = docker_runner.container.logs(
-                stdout=True, stderr=True, stream=True, follow=True
-            )
-            for message in output:
+            for message in docker_runner:
                 msg = message.decode("utf-8")
                 aws_api.send_message(msg)
                 logger.info(f"Sent message: {msg}")
+
+            # TODO: Use select to check for available data on the container logs stream
+            # while True:
+            #     readable, _, _ = select.select([docker_runner.container.logs(stream=True)], [], [], 0.1)
+            #     if readable:
+            #         # Read available logs from the stream
+            #         message = docker_runner.container.logs(stream=True).decode("utf-8")
+            #         aws_api.send_message(message)
+            #         logger.info(f"Sent message: {message}")
+            #     else:
+            #         # No new logs, wait for a short period
+            #         select.select([], [], [], 0.1)
+
         except KeyboardInterrupt:
             return
         except Exception as e:
